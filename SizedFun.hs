@@ -14,7 +14,7 @@ import Data.Lens.Light
 class Infer a b where
 instance (Infer a b, Infer p q) => Infer (a->p) (b->q)
 instance Infer a b => Infer [a] [b]
-instance Infer a a 
+instance (a~b) => Infer a b
 instance Infer Unsized Int
 
 class (Exp e, Size (SizeExp e)) => SizedFun e where
@@ -65,4 +65,4 @@ instance SizedFun DeclSize where
     type SizeExp DeclSize = S SData
     bind name size exp = DeclSize size
 
-getDeclSize (DeclSize size) = size
+--getDeclSize (DeclSize size) = size
