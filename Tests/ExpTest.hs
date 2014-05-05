@@ -29,7 +29,7 @@ testDCons = cons (lit 1) $ cons (lit 2) nil
 testD2Cons :: Exp e => e [[Int]]
 testD2Cons = cons (cons (lit 1) nil) nil
 
-checkAST :: S a -> String -> IO Bool
+checkAST :: S SData a -> String -> IO Bool
 checkAST exp repr = ast exp >>= (\t -> return $ t "" == repr )
 
 tests :: [ IO Bool ]

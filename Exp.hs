@@ -3,6 +3,7 @@ module Exp where
 import Lambda
 import Ops
 import Data.Supply as S
+import Data.Lens.Light
 
 class LOps l => Exp l where
     nil :: l [a]
@@ -20,29 +21,32 @@ instance Exp Q where
         (x:xs) -> cbranch (Q x) (Q xs)
     cond c tbranch fbranch = if unQ c then tbranch else fbranch
     undefined = Prelude.undefined 
-instance Exp S where
-    nil = S $ \_ _ -> showString "[]"
-    undefined = S $ \_ _ -> showString "undefined"
-    match list nbranch cbranch = S $ \s p ->
-        let (s1, s2, ss) = S.split3 s
+
+instance SContext s => Exp (S s) where
+    nil = S $ \_ -> showString "[]"
+    undefined = S $ \_ -> showString "undefined"
+    match list nbranch cbranch = S $ \ctx ->
+        let (s1, s2, ss) = S.split3 (getL supply ctx)
             (s3, s4, s5) = S.split3 ss
             v1           = S.supplyValue s4
-            showV1       = S $ \_ _ -> showVar v1
+            showV1       = S $ \_ -> showVar v1
             v2           = S.supplyValue s5
-            showV2       = S $ \_ _ -> showVar v2
+            showV2       = S $ \_ -> showVar v2
+            p = getL prec ctx
         in showParen (p>0) $ 
             showString "case ".
-            unS list s1 0 .
+            unS list (updateCtx s1 0 ctx) .
             showString " of [] => ".
-            unS nbranch s2 0 .
+            unS nbranch (updateCtx s2 0 ctx) .
             showString "; (" .  showVar v1 . showChar ':' . showVar v2 . showString ") => " .
-            unS (cbranch showV1 showV2) s3 0
-    cond c tbranch fbranch = S $ \s p ->
-        let (s1, s2, s3) = S.split3 s
+            unS (cbranch showV1 showV2) (updateCtx s3 0 ctx)
+    cond c tbranch fbranch = S $ \ctx ->
+        let (s1, s2, s3) = S.split3 (getL supply ctx)
+            p = getL prec ctx
         in showParen (p>0) $ 
             showString "if ".
-            unS c s1 0 .
+            unS c (updateCtx s1 0 ctx).
             showString " then " .
-            unS tbranch s2 0 .
+            unS tbranch (updateCtx s2 0 ctx).
             showString " else " .
-            unS fbranch s3 0
+            unS fbranch (updateCtx s3 0 ctx)

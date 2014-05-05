@@ -7,6 +7,7 @@ module Size where
 import Lambda
 import Ops
 import Data.Supply as S
+import Data.Lens.Light
 
 data Unsized
 
@@ -18,36 +19,39 @@ class (LOps l) => Size l where
     bottom :: l a
 
 
-instance Size S where
-    unsized = S $ \_ _ -> showChar 'U'
-    bottom = S $ \_ _ -> showChar '┴'
-    list size sexp = S $ \s p ->
-        let (s1, s2) = S.split2 s
+instance SContext s => Size (S s) where
+    unsized = S $ \_ -> showChar 'U'
+    bottom = S $ \_ -> showChar '┴'
+    list size sexp = S $ \ctx ->
+        let (s1, s2) = S.split2 (getL supply ctx)
+            p = getL prec ctx
         in showParen (p>0) $
             showString "List " .
-            unS size s1 9 .
+            unS size (updateCtx s1 9 ctx) .
             showChar ' ' .
-            unS sexp s2 9
-    slam f = S $ \s p ->
-        let (s1, s2, s3) = S.split3 s
+            unS sexp (updateCtx s2 9 ctx)
+    slam f = S $ \ctx ->
+        let (s1, s2, s3) = S.split3 (getL supply ctx)
             v1           = S.supplyValue s1
-            showV1       = S $ \_ _ -> showVar v1
+            showV1       = S $ \_ -> showVar v1
             v2           = S.supplyValue s2
-            showV2       = S $ \_ _ -> showVar v2
+            showV2       = S $ \_ -> showVar v2
+            p = getL prec ctx
         in showParen (p>0) $
             showChar 'Λ' .
             showVar v1 .
             showChar ',' .
             showVar v2 .
             showChar '.' .
-            unS (f showV1 showV2) s3 0
-    shift e1 ss e2 = S $ \s p ->
-        let (s1, s2, s3) = S.split3 s
+            unS (f showV1 showV2) (updateCtx s3 0 ctx)
+    shift e1 ss e2 = S $ \ctx ->
+        let (s1, s2, s3) = S.split3 (getL supply ctx)
+            p = getL prec ctx
         in showParen (p>0)
         $ showString "Shift "
-        . unS e1 s1 2
+        . unS e1 (updateCtx s1 2 ctx)
         . showChar ' '
-        . unS ss s2 2
+        . unS ss (updateCtx s2 2 ctx)
         . showChar ' '
-        . unS e2 s3 2
+        . unS e2 (updateCtx s3 2 ctx)
 

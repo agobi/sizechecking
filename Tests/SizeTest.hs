@@ -32,7 +32,7 @@ testConcat = slam $ \s1 f1 -> slam $ \s2 f2 ->
     list (s1 + s2) $ shift f1 s1 f2
 
 
-checkAst :: S a -> String -> IO Bool
+checkAst :: S SData a -> String -> IO Bool
 checkAst exp repr = ast exp >>= (\t -> return $ t "" == repr)
 
 tests :: [IO Bool]
